@@ -1,45 +1,9 @@
 use reqwest;
-use scraper::{Html, Selector};
+use scraper::{Element, Html, Selector};
 use scraper::element_ref::ElementRef;
 use crate::models::{Node, NodeConfig, PageConfig};
 
-pub async fn scrape_articles() -> Result<Vec<Node>, Box<dyn std::error::Error>> {
-  let title_node_config = NodeConfig {
-    title: String::from("Title"),
-    selector: String::from("p.title"),
-    attribute: String::from(""),
-    children: vec![]
-  };
-  let description_node_config = NodeConfig {
-    title: String::from("Description"),
-    selector: String::from("p.teaser"),
-    attribute: String::from(""),
-    children: vec![]
-  };
-  let link_node_config = NodeConfig {
-    title: String::from("Link"),
-    selector: String::from("a.cta-big"),
-    attribute: String::from("href"),
-    children: vec![]
-  };
-  let logo_node_config = NodeConfig {
-    title: String::from("Logo"),
-    selector: String::from("img.logo"),
-    attribute: String::from("src"),
-    children: vec![]
-  };
-  let tile_node_config = NodeConfig {
-    title: String::from("Software"),
-    selector: String::from("article.descriptive-software-tile"),
-    attribute: String::from(""),
-    children: vec![title_node_config, description_node_config, link_node_config, logo_node_config]
-  };
-  let page_config = PageConfig {
-    url: String::from("https://appvizer.fr/finance-comptabilite/comptabilite"),
-    after: String::from("a.cim-label"),
-    children: vec![tile_node_config]
-  };
-
+pub async fn use_web_scraper(page_config: PageConfig) -> Result<Vec<Node>, Box<dyn std::error::Error>> {
   let nodes = match scrape_page(page_config).await {
     Ok(response) => response,
     Err(_) => panic!("Oops!!")
@@ -66,16 +30,19 @@ pub async fn scrape_page(page_config: PageConfig) -> Result<Vec<Node>, Box<dyn s
       };
     };
 
-    let pagination_selector = Selector::parse(".pagination p.current-page").unwrap();
-    let pagination_elements = body_element.select(&pagination_selector).next();
+    let pagination_selector = Selector::parse(&*page_config.pagination).unwrap();
+    let pagination_element = body_element.select(&pagination_selector).next();
 
-    if let Some(element) = pagination_elements {
-      if let Some(next_sibling) = element.next_sibling() {
-        if let Some(sibling) = next_sibling.value().as_element() {
-          url = sibling.attr("href").unwrap().parse().unwrap()
-        } else { break }
-      } else { break }
-    } else { break }
+    if let Some(element) = pagination_element {
+      match scrape_pagination(element) {
+        None => { break }
+        Some(href) => {
+          url = href;
+          continue
+        }
+      };
+    }
+    break
   }
   Ok(nodes)
 }
@@ -122,5 +89,15 @@ pub async fn scrape_node(node_config: &NodeConfig, parent_element: ElementRef<'_
       content,
       children: vec![]
     })
+  }
+}
+
+pub fn scrape_pagination(element: ElementRef<'_>) -> Option<String> {
+  let name = element.value().name();
+
+  if name == "a" {
+    Some(element.attr("href").unwrap().parse().unwrap())
+  } else {
+    scrape_pagination(element.parent_element()?)
   }
 }
