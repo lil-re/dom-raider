@@ -1,47 +1,84 @@
 use reqwest;
 use scraper::{Html, Selector};
-use scraper::node::Element;
 use scraper::element_ref::ElementRef;
-use serde::de::Unexpected::Str;
 use crate::models::{Node, NodeConfig, PageConfig};
 
 pub async fn scrape_articles() -> Result<Vec<Node>, Box<dyn std::error::Error>> {
   let title_node_config = NodeConfig {
     title: String::from("Title"),
     selector: String::from("p.title"),
+    attribute: String::from(""),
     children: vec![]
   };
   let description_node_config = NodeConfig {
     title: String::from("Description"),
     selector: String::from("p.teaser"),
+    attribute: String::from(""),
     children: vec![]
   };
-  let teaser_node_config = NodeConfig {
+  let link_node_config = NodeConfig {
+    title: String::from("Link"),
+    selector: String::from("a.cta-big"),
+    attribute: String::from("href"),
+    children: vec![]
+  };
+  let logo_node_config = NodeConfig {
+    title: String::from("Logo"),
+    selector: String::from("img.logo"),
+    attribute: String::from("src"),
+    children: vec![]
+  };
+  let tile_node_config = NodeConfig {
     title: String::from("Software"),
-    selector: String::from("div.title-teaser"),
-    children: vec![title_node_config, description_node_config]
+    selector: String::from("article.descriptive-software-tile"),
+    attribute: String::from(""),
+    children: vec![title_node_config, description_node_config, link_node_config, logo_node_config]
   };
   let page_config = PageConfig {
     url: String::from("https://appvizer.fr/finance-comptabilite/comptabilite"),
     after: String::from("a.cim-label"),
-    children: vec![teaser_node_config]
+    children: vec![tile_node_config]
   };
 
-  let response = reqwest::get(page_config.url).await?.text().await?;
-  let document = Html::parse_document(&response);
-  let selector = Selector::parse("body").unwrap();
-  let body = document.select(&selector).next().unwrap();
-  let mut nodes: Vec<Node> = vec![];
-
-  for node_config in page_config.children.iter() {
-    match scrape_node(&node_config, body).await {
-      None => {}
-      Some(node) => {nodes.push(node)}
-    }
-  }
+  let nodes = match scrape_page(page_config).await {
+    Ok(response) => response,
+    Err(_) => panic!("Oops!!")
+  };
   Ok(nodes)
 }
 
+pub async fn scrape_page(page_config: PageConfig) -> Result<Vec<Node>, Box<dyn std::error::Error>> {
+  let mut nodes: Vec<Node> = vec![];
+  let mut url = page_config.url;
+
+  loop {
+    // sleep(Duration::from_millis(10000)).await;
+    println!("{}", url);
+    let response = reqwest::get(url).await?.text().await?;
+    let document = Html::parse_document(&response);
+    let body_selector = Selector::parse("body").unwrap();
+    let body_element = document.select(&body_selector).next().unwrap();
+
+    for node_config in page_config.children.iter() {
+      match scrape_node(&node_config, body_element).await {
+        None => {}
+        Some(node) => {nodes.push(node)}
+      };
+    };
+
+    let pagination_selector = Selector::parse(".pagination p.current-page").unwrap();
+    let pagination_elements = body_element.select(&pagination_selector).next();
+
+    if let Some(element) = pagination_elements {
+      if let Some(next_sibling) = element.next_sibling() {
+        if let Some(sibling) = next_sibling.value().as_element() {
+          url = sibling.attr("href").unwrap().parse().unwrap()
+        } else { break }
+      } else { break }
+    } else { break }
+  }
+  Ok(nodes)
+}
 
 pub async fn scrape_node(node_config: &NodeConfig, parent_element: ElementRef<'_>) -> Option<Node> {
   // Retrieve the elements inside the parent element matching the node selector from node config
@@ -71,9 +108,13 @@ pub async fn scrape_node(node_config: &NodeConfig, parent_element: ElementRef<'_
   } else {
     // Otherwise, Retrieve node content
     let node_element = node_elements.next().unwrap();
-    let content = node_element.text().collect::<String>();
-    // println!("selector => {}", &node_config.selector);
-    // println!("content => {}", content);
+    let content;
+
+    if node_config.attribute.len() > 0 {
+      content = node_element.value().attr(&node_config.attribute)?.to_string();
+    } else {
+      content = node_element.text().collect::<String>();
+    }
 
     Some(Node {
       selector: String::from(&node_config.selector),

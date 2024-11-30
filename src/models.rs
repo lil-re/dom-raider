@@ -11,6 +11,7 @@ pub struct PageConfig {
 pub struct NodeConfig {
   pub selector: String,
   pub title: String,
+  pub attribute: String,
   pub children: Vec<NodeConfig>
 }
 

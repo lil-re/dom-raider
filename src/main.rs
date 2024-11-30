@@ -5,8 +5,6 @@ mod scraper;
 
 #[tokio::main]
 async fn main() {
-    println!("Hello, world!");
-
     match scraper::scrape_articles().await {
         Ok(nodes) => {
             for node in nodes.iter() {
