@@ -3,7 +3,8 @@ use serde::Serialize;
 #[derive(Serialize)]
 pub struct PageConfig {
   pub url: String,
-  pub pagination: String,
+  pub title: String,
+  pub pagination_selector: String,
   pub children: Vec<NodeConfig>
 }
 
@@ -18,7 +19,7 @@ pub struct NodeConfig {
 #[derive(Serialize)]
 pub struct Page {
   pub url: String,
-  pub after: String,
+  pub title: String,
   pub children: Vec<Node>
 }
 

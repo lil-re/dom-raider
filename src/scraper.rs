@@ -1,19 +1,24 @@
 use reqwest;
 use scraper::{Element, Html, Selector};
 use scraper::element_ref::ElementRef;
-use crate::models::{Node, NodeConfig, PageConfig};
+use crate::models::{Node, NodeConfig, Page, PageConfig};
 
-pub async fn use_web_scraper(page_config: PageConfig) -> Result<Vec<Node>, Box<dyn std::error::Error>> {
-  let nodes = match scrape_page(page_config).await {
+pub async fn use_web_scraper(page_config: PageConfig) -> Result<Page, Box<dyn std::error::Error>> {
+  let nodes = match scrape_page(&page_config).await {
     Ok(response) => response,
     Err(_) => panic!("Oops!!")
   };
-  Ok(nodes)
+  Ok(Page {
+    url: String::from(&page_config.url),
+    title: String::from(&page_config.title),
+    children: nodes
+  })
 }
 
-pub async fn scrape_page(page_config: PageConfig) -> Result<Vec<Node>, Box<dyn std::error::Error>> {
+pub async fn scrape_page(page_config: &PageConfig) -> Result<Vec<Node>, Box<dyn std::error::Error>> {
+  let base_url = String::from(&page_config.url);
+  let mut url = String::from(&page_config.url);
   let mut nodes: Vec<Node> = vec![];
-  let mut url = page_config.url;
 
   loop {
     // sleep(Duration::from_millis(10000)).await;
@@ -30,17 +35,25 @@ pub async fn scrape_page(page_config: PageConfig) -> Result<Vec<Node>, Box<dyn s
       };
     };
 
-    let pagination_selector = Selector::parse(&*page_config.pagination).unwrap();
-    let pagination_element = body_element.select(&pagination_selector).next();
+    if page_config.pagination_selector.len() > 0 {
+      let pagination_selector = Selector::parse(&*page_config.pagination_selector).unwrap();
+      let pagination_element = body_element.select(&pagination_selector).next();
 
-    if let Some(element) = pagination_element {
-      match scrape_pagination(element) {
-        None => { break }
-        Some(href) => {
-          url = href;
-          continue
-        }
-      };
+      if let Some(element) = pagination_element {
+        match scrape_pagination(element) {
+          None => { break }
+          Some(href) => {
+            if href.contains("http") {
+              url = href;
+            } else {
+              let mut owned_url = base_url.to_owned();
+              owned_url.push_str(&*href);
+              url = owned_url
+            }
+            continue
+          }
+        };
+      }
     }
     break
   }
@@ -74,21 +87,29 @@ pub async fn scrape_node(node_config: &NodeConfig, parent_element: ElementRef<'_
     })
   } else {
     // Otherwise, Retrieve node content
-    let node_element = node_elements.next().unwrap();
-    let content;
+    if let Some(node_element) = node_elements.next() {
+      let content;
 
-    if node_config.attribute.len() > 0 {
-      content = node_element.value().attr(&node_config.attribute)?.to_string();
+      if node_config.attribute.len() > 0 {
+        content = node_element.value().attr(&node_config.attribute)?.to_string();
+      } else {
+        content = node_element.text().collect::<String>().trim().parse().unwrap();
+      }
+
+      Some(Node {
+        selector: String::from(&node_config.selector),
+        title: String::from(&node_config.title),
+        content,
+        children: vec![]
+      })
     } else {
-      content = node_element.text().collect::<String>();
+      Some(Node {
+        selector: String::from(&node_config.selector),
+        title: String::from(&node_config.title),
+        content: String::from(""),
+        children: vec![]
+      })
     }
-
-    Some(Node {
-      selector: String::from(&node_config.selector),
-      title: String::from(&node_config.title),
-      content,
-      children: vec![]
-    })
   }
 }
 

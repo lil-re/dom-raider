@@ -5,45 +5,53 @@ mod scraper;
 
 #[tokio::main]
 async fn main() {
-    let title_node_config = NodeConfig {
-        title: String::from("Title"),
-        selector: String::from("p.title"),
+    let name_node_config = NodeConfig {
+        title: String::from("Name"),
+        selector: String::from("a.profile__link"),
         attribute: String::from(""),
         children: vec![]
     };
-    let description_node_config = NodeConfig {
-        title: String::from("Description"),
-        selector: String::from("p.teaser"),
+    let symbol_node_config = NodeConfig {
+        title: String::from("Symbol"),
+        selector: String::from("span.profile__subtitle-name"),
         attribute: String::from(""),
         children: vec![]
     };
-    let link_node_config = NodeConfig {
-        title: String::from("Link"),
-        selector: String::from("a.cta-big"),
-        attribute: String::from("href"),
-        children: vec![]
-    };
-    let logo_node_config = NodeConfig {
-        title: String::from("Logo"),
-        selector: String::from("img.logo"),
-        attribute: String::from("src"),
-        children: vec![]
-    };
-    let tile_node_config = NodeConfig {
-        title: String::from("Software"),
-        selector: String::from("article.descriptive-software-tile"),
+    let price_node_config = NodeConfig {
+        title: String::from("Price"),
+        selector: String::from("tr.table__row--full-width td:nth-of-type(2) div.valuta"),
         attribute: String::from(""),
-        children: vec![title_node_config, description_node_config, link_node_config, logo_node_config]
+        children: vec![]
+    };
+    let market_cap_node_config = NodeConfig {
+        title: String::from("Market cap"),
+        selector: String::from("tr.table__row--full-width td:nth-of-type(3) div.valuta"),
+        attribute: String::from(""),
+        children: vec![]
+    };
+    let change_node_config = NodeConfig {
+        title: String::from("24h change"),
+        selector: String::from("tr.table__row--full-width td:nth-of-type(4) div.change"),
+        attribute: String::from(""),
+        children: vec![]
+    };
+    let row_node_config = NodeConfig {
+        title: String::from("Coin"),
+        selector: String::from("tr.table__row--full-width"),
+        attribute: String::from(""),
+        children: vec![name_node_config, symbol_node_config, price_node_config, market_cap_node_config, change_node_config]
     };
     let page_config = PageConfig {
-        url: String::from("https://appvizer.fr/finance-comptabilite/comptabilite"),
-        pagination: String::from("a svg.next"),
-        children: vec![tile_node_config]
+        url: String::from("https://coinranking.com"),
+        title: String::from("CoinMarketCap"),
+        // pagination_selector: String::from(r#"section.pagination img[alt="Next"]"#),
+        pagination_selector: String::from(""),
+        children: vec![row_node_config]
     };
 
     match scraper::use_web_scraper(page_config).await {
-        Ok(nodes) => {
-            for node in nodes.iter() {
+        Ok(page) => {
+            for node in page.children.iter() {
                 print_node(node)
             }
         },
