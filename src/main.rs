@@ -1,48 +1,49 @@
-use crate::models::{Node, NodeConfig, PageConfig};
+use crate::models::{FileItem, Node, Page};
 
 mod models;
 mod scraper;
+mod file;
 
 #[tokio::main]
 async fn main() {
-    let name_node_config = NodeConfig {
+    let name_node_config = Node {
         title: String::from("Name"),
-        selector: String::from("a.profile__link"),
+        selector: String::from("span.coin-profile__name"),
         attribute: String::from(""),
         children: vec![]
     };
-    let symbol_node_config = NodeConfig {
+    let symbol_node_config = Node {
         title: String::from("Symbol"),
-        selector: String::from("span.profile__subtitle-name"),
+        selector: String::from("span.coin-profile__symbol"),
         attribute: String::from(""),
         children: vec![]
     };
-    let price_node_config = NodeConfig {
+    let price_node_config = Node {
         title: String::from("Price"),
-        selector: String::from("tr.table__row--full-width td:nth-of-type(2) div.valuta"),
+        selector: String::from("div.coins-table table tbody tr td:nth-of-type(4) real-time-price"),
         attribute: String::from(""),
         children: vec![]
     };
-    let market_cap_node_config = NodeConfig {
+    let market_cap_node_config = Node {
         title: String::from("Market cap"),
-        selector: String::from("tr.table__row--full-width td:nth-of-type(3) div.valuta"),
+        selector: String::from("div.coins-table table tbody tr td:nth-of-type(4) div.table__sub-item"),
         attribute: String::from(""),
         children: vec![]
     };
-    let change_node_config = NodeConfig {
+    let change_node_config = Node {
         title: String::from("24h change"),
-        selector: String::from("tr.table__row--full-width td:nth-of-type(4) div.change"),
+        selector: String::from("span.change__percentage"),
         attribute: String::from(""),
         children: vec![]
     };
-    let row_node_config = NodeConfig {
+    let row_node_config = Node {
         title: String::from("Coin"),
-        selector: String::from("tr.table__row--full-width"),
+        selector: String::from("table:first-of-type tbody tr"),
         attribute: String::from(""),
         children: vec![name_node_config, symbol_node_config, price_node_config, market_cap_node_config, change_node_config]
     };
-    let page_config = PageConfig {
-        url: String::from("https://coinranking.com"),
+    let page_config = Page {
+        url: String::from("https://coinranking.com/coins"),
         title: String::from("CoinMarketCap"),
         // pagination_selector: String::from(r#"section.pagination img[alt="Next"]"#),
         pagination_selector: String::from(""),
@@ -50,21 +51,9 @@ async fn main() {
     };
 
     match scraper::use_web_scraper(page_config).await {
-        Ok(page) => {
-            for node in page.children.iter() {
-                print_node(node)
-            }
+        Ok(file_items) => {
+          file::export_csv_file(file_items).expect("TODO: panic message");
         },
         Err(_) => println!("Oops :-("),
-    }
-}
-
-fn print_node(node: &Node) {
-    if node.children.len() > 0 {
-        for child_node in node.children.iter() {
-            print_node(&child_node)
-        }
-    } else {
-        println!("{} => {}", node.title, node.content);
     }
 }
