@@ -46,7 +46,11 @@ pub async fn scrape_page(page: &Page) -> Result<Vec<FileItem>, Box<dyn std::erro
               owned_url.push_str(&*href);
               url = owned_url
             }
-            continue
+            if url.to_owned().contains(&base_url.to_owned()) {
+              continue
+            } else {
+              break
+            }
           }
         };
       }

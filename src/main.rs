@@ -38,15 +38,15 @@ async fn main() {
     };
     let row_node_config = Node {
         title: String::from("Coin"),
-        selector: String::from("table:first-of-type tbody tr"),
+        selector: String::from("div.coins-table table tbody tr"),
         attribute: String::from(""),
         children: vec![name_node_config, symbol_node_config, price_node_config, market_cap_node_config, change_node_config]
     };
     let page_config = Page {
         url: String::from("https://coinranking.com/coins"),
         title: String::from("CoinMarketCap"),
-        // pagination_selector: String::from(r#"section.pagination img[alt="Next"]"#),
-        pagination_selector: String::from(""),
+        pagination_selector: String::from(r#"a.pagination__next"#),
+        // pagination_selector: String::from(""),
         children: vec![row_node_config]
     };
 
