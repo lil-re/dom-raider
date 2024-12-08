@@ -1,5 +1,6 @@
-use serde::Serialize;
+use serde::{Deserialize};
 
+#[derive(Deserialize, Debug)]
 pub struct Page {
   pub url: String,
   pub title: String,
@@ -7,6 +8,7 @@ pub struct Page {
   pub children: Vec<Node>
 }
 
+#[derive(Deserialize, Debug)]
 pub struct Node {
   pub selector: String,
   pub title: String,

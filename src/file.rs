@@ -35,7 +35,6 @@ fn export_headers(file_item: &FileItem) -> Vec<&String> {
       headers.push(&cell.title);
     }
   }
-
   headers
 }
 
