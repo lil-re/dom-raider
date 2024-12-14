@@ -3,7 +3,6 @@ use serde::{Deserialize};
 #[derive(Deserialize, Debug)]
 pub struct Page {
   pub url: String,
-  pub title: String,
   pub pagination_selector: String,
   pub children: Vec<Node>
 }

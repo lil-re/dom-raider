@@ -15,14 +15,14 @@ pub(crate) fn export_csv_file (file_items: Vec<FileItem>) -> Result<(), Error> {
 fn export_file_items(file_item: FileItem, wtr: &mut Writer<File>) {
   if file_item.item_type == FileItemType::Sheet {
     let headers = export_headers(&file_item);
-    &wtr.write_record(headers);
+    wtr.write_record(headers).expect("Error while exporting headers");
 
     for line in file_item.children {
       export_file_items(line, wtr)
     }
   } else if file_item.item_type == FileItemType::Line {
     let cells = export_cells(file_item);
-    &wtr.write_record(cells);
+    wtr.write_record(cells).expect("Error while exporting content");
   }
 }
 

@@ -1,5 +1,4 @@
-use std::error::Error;
-use crate::models::{FileItem, Node, Page};
+use crate::models::{FileItem, Page};
 
 mod models;
 mod scraper;
