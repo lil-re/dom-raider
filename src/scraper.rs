@@ -1,13 +1,14 @@
+use std::collections::HashMap;
 use std::error::Error;
 use reqwest;
 use scraper::{Element, Html, Selector};
 use scraper::element_ref::{ElementRef, Select};
-use crate::models::{FileItem, Node, Page, FileItemType};
+use crate::models::{FileItem, Node, Page, FileItemType, SheetList};
 
-pub async fn use_web_scraper(page: Page) -> Result<Vec<FileItem>, Box<dyn std::error::Error>> {
+pub async fn use_web_scraper(page: Page) -> Result<HashMap<String, Vec<FileItem>>, Box<dyn std::error::Error>> {
   let base_url = String::from(&page.url);
   let mut url = String::from(&page.url);
-  let mut file_items: Vec<FileItem> = vec![];
+  let mut sheets: SheetList = HashMap::new();
 
   loop {
     println!("{}", url);
@@ -19,7 +20,9 @@ pub async fn use_web_scraper(page: Page) -> Result<Vec<FileItem>, Box<dyn std::e
     for node in page.children.iter() {
       match scrape_node(&node, body_element).await {
         None => {}
-        Some(file_item) => {file_items.push(file_item)}
+        Some(mut file_item) => {
+          sheets.entry(file_item.title).or_insert(Vec::new()).append(&mut file_item.children);
+        }
       };
     };
 
@@ -29,12 +32,12 @@ pub async fn use_web_scraper(page: Page) -> Result<Vec<FileItem>, Box<dyn std::e
         continue
       }
       Err(error) => {
-        println!("{}. Stopping web scraper.", error);
+        println!("{} Stopping web scraper.", error);
         break
       }
     };
   }
-  Ok(file_items)
+  Ok(sheets)
 }
 
 /// If the `pagination_selector` is not empty, then try to retrieve a link to navigate to the next
@@ -136,12 +139,12 @@ async fn scrape_node_children(node: &Node, node_elements: &mut Select<'_, '_>) -
     }
   }
 
-  // Finally, it groups lines into a `FileItem` of type `Sheet`
+  // Finally, it groups lines into a `FileItem` of type `Group`
   Some(FileItem {
     title: String::from(&node.title),
     content: String::from(""),
     children: lines,
-    item_type: FileItemType::Sheet
+    item_type: FileItemType::Group
   })
 }
 

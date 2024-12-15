@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use serde::{Deserialize};
 
 /// The description of a web page to scrape
@@ -37,6 +38,9 @@ pub struct FileItem {
 #[derive(PartialEq)]
 pub enum FileItemType {
   Sheet,
+  Group,
   Line,
   Cell,
 }
+
+pub type SheetList = HashMap<String, Vec<FileItem>>;
