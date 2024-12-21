@@ -3,20 +3,31 @@ use std::error::Error;
 use reqwest;
 use scraper::{Element, Html, Selector};
 use scraper::element_ref::{ElementRef, Select};
+use crate::logs::{print_fetching, print_info, CANNOT_FIND_NEXT_PAGE_MESSAGE, NO_PAGINATION_CONFIG_MESSAGE, STOP_SCRAPER_MESSAGE};
 use crate::models::{FileItem, Node, Page, FileItemType, SheetList};
 
+/// Web scraper main function
+///
+/// It retrieves the content of the target web page.
+/// If a pagination configuration is defined, it will retrieve the next page's URL and retrieve its
+/// content
+/// The loop stops if there is no more page to fetch or if the next page's URL do not match the
+/// first page's URL
 pub async fn use_web_scraper(page: Page) -> Result<HashMap<String, Vec<FileItem>>, Box<dyn std::error::Error>> {
   let base_url = String::from(&page.url);
   let mut url = String::from(&page.url);
   let mut sheets: SheetList = HashMap::new();
 
   loop {
-    println!("{}", url);
+    print_fetching(url.as_str());
+
+    // Fetch the current page's content
     let response = reqwest::get(url).await?.text().await?;
     let document = Html::parse_document(&response);
     let body_selector = Selector::parse("body").unwrap();
     let body_element = document.select(&body_selector).next().unwrap();
 
+    // Retrieve content for each group (also named child) in the scraper's configuration file.
     for node in page.children.iter() {
       match scrape_node(&node, body_element).await {
         None => {}
@@ -26,13 +37,15 @@ pub async fn use_web_scraper(page: Page) -> Result<HashMap<String, Vec<FileItem>
       };
     };
 
+    // Retrieve the next page URL
     match get_next_page_url(&page, &base_url, body_element) {
       Ok(next_page_url) => {
         url = next_page_url;
         continue
       }
       Err(error) => {
-        println!("{} Stopping web scraper.", error);
+        print_info(error.to_string().as_str());
+        print_info(STOP_SCRAPER_MESSAGE);
         break
       }
     };
@@ -54,13 +67,13 @@ fn get_next_page_url(page: &Page, base_url: &String, body_element: ElementRef) -
       if new_url.to_owned().contains(&base_url.to_owned()) {
         Ok(new_url)
       } else {
-        Err(Box::from("Cannot find next page URL."))
+        Err(Box::from(CANNOT_FIND_NEXT_PAGE_MESSAGE))
       }
     } else {
-      Err(Box::from("Cannot find next page URL."))
+      Err(Box::from(CANNOT_FIND_NEXT_PAGE_MESSAGE))
     }
   } else {
-    Err(Box::from("No configuration found for pagination."))
+    Err(Box::from(NO_PAGINATION_CONFIG_MESSAGE))
   }
 }
 

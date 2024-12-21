@@ -1,5 +1,6 @@
 use std::fs::File;
 use csv::{Error, Writer};
+use crate::logs::{format_error, CELLS_EXPORT_ERROR, HEADERS_EXPORT_ERROR};
 use crate::models::{FileItem, FileItemType, SheetList};
 
 /// Export scraped content in CSV files
@@ -27,7 +28,7 @@ fn export_headers<'a>(file_items: &Vec<FileItem>, wtr: &mut Writer<File>) {
       headers.push(&cell.title);
     }
   }
-  wtr.write_record(headers).expect("Error while exporting headers");
+  wtr.write_record(headers).expect(format_error(HEADERS_EXPORT_ERROR).as_str());
 }
 
 /// Iterate through a vector of file items to export their contents
@@ -55,5 +56,5 @@ fn export_cells(file_item: FileItem, wtr: &mut Writer<File>) {
       cells.push(cell.content);
     }
   }
-  wtr.write_record(cells).expect("Error while exporting content");
+  wtr.write_record(cells).expect(format_error(CELLS_EXPORT_ERROR).as_str());
 }

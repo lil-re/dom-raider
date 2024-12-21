@@ -4,7 +4,7 @@ use crate::models::Page;
 
 /// Read the content of a configuration file (e.g. `config.json`) and return a `Page`
 ///
-/// The config file should have the same structure as a `Page` with `Node`
+/// The config file should have the same structure as a `Page` with `Nodes` as children
 pub fn read_config() -> Result<Page, Box<dyn std::error::Error>> {
   let file_path = "config.json";
   let json_content = fs::read_to_string(file_path)?;

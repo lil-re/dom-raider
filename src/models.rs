@@ -37,7 +37,6 @@ pub struct FileItem {
 #[derive(Debug)]
 #[derive(PartialEq)]
 pub enum FileItemType {
-  Sheet,
   Group,
   Line,
   Cell,
