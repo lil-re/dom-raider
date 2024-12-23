@@ -1,78 +1,23 @@
 {
-  "url": "https://coinranking.com/coins",
-  "title": "CoinMarketCap",
+  "url": "https://news.ycombinator.com/",
+  "title": "HackerNews",
   "pagination_selector": "",
   "children": [
     {
-      "title": "Coin",
-      "selector": "div.coins-table table tbody tr",
+      "title": "Submissions",
+      "selector": "table .submission",
       "attribute": "",
       "children": [
         {
-          "title": "Name",
-          "selector": "span.coin-profile__name",
+          "title": "Title",
+          "selector": "span.titleline a",
           "attribute": "",
           "children": []
         },
         {
-          "title": "Symbol",
-          "selector": "span.coin-profile__symbol",
-          "attribute": "",
-          "children": []
-        },
-        {
-          "title": "Price",
-          "selector": "div.coins-table table tbody tr td:nth-of-type(4) real-time-price",
-          "attribute": "",
-          "children": []
-        },
-        {
-          "title": "Market cap",
-          "selector": "div.coins-table table tbody tr td:nth-of-type(4) div.table__sub-item",
-          "attribute": "",
-          "children": []
-        },
-        {
-          "title": "24h change",
-          "selector": "span.change__percentage",
-          "attribute": "",
-          "children": []
-        }
-      ]
-    },
-    {
-      "title": "Top Gainer",
-      "selector": "div.top-gainers-table table tbody tr",
-      "attribute": "",
-      "children": [
-        {
-          "title": "Name",
-          "selector": "span.coin-profile__name",
-          "attribute": "",
-          "children": []
-        },
-        {
-          "title": "Symbol",
-          "selector": "span.coin-profile__symbol",
-          "attribute": "",
-          "children": []
-        },
-        {
-          "title": "Price",
-          "selector": "div.coins-table table tbody tr td:nth-of-type(3) real-time-price",
-          "attribute": "",
-          "children": []
-        },
-        {
-          "title": "Market cap",
-          "selector": "div.coins-table table tbody tr td:nth-of-type(3) div.table__sub-item",
-          "attribute": "",
-          "children": []
-        },
-        {
-          "title": "24h change",
-          "selector": "span.change__percentage",
-          "attribute": "",
+          "title": "Link",
+          "selector": "span.titleline a",
+          "attribute": "href",
           "children": []
         }
       ]
